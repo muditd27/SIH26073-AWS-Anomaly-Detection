@@ -189,3 +189,26 @@ ALTER TABLE ONLY public.telemetry
 
 \unrestrict Xc5dH60hoArhwRaPMUKzBW4kRtLE7WOCTm1Z14u5yZ0zQk2lYAQwSrlrF97f7Jk
 
+-- ML training and validation dataset
+CREATE TABLE IF NOT EXISTS training_data (
+    training_id BIGSERIAL PRIMARY KEY,
+    station_id VARCHAR(50) NOT NULL REFERENCES stations(station_id),
+    timestamp TIMESTAMPTZ NOT NULL,
+
+    temperature DOUBLE PRECISION,
+    humidity DOUBLE PRECISION,
+    pressure DOUBLE PRECISION,
+
+    dataset_type VARCHAR(30) NOT NULL
+        CHECK (dataset_type IN ('clean', 'anomaly_injected')),
+
+    is_anomaly BOOLEAN DEFAULT FALSE,
+    anomaly_type VARCHAR(100),
+    anomaly_id VARCHAR(100),
+
+    original_temperature DOUBLE PRECISION,
+    original_humidity DOUBLE PRECISION,
+    original_pressure DOUBLE PRECISION,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
