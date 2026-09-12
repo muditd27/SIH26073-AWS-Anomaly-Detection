@@ -212,3 +212,41 @@ CREATE TABLE IF NOT EXISTS training_data (
 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+-- ML prediction outputs
+CREATE TABLE IF NOT EXISTS predictions (
+    prediction_id BIGSERIAL PRIMARY KEY,
+    telemetry_id BIGINT REFERENCES telemetry(telemetry_id),
+    station_id VARCHAR(50) NOT NULL REFERENCES stations(station_id),
+    expected_temperature DOUBLE PRECISION,
+    expected_pressure DOUBLE PRECISION,
+    expected_humidity DOUBLE PRECISION,
+    temperature_error DOUBLE PRECISION,
+    pressure_error DOUBLE PRECISION,
+    humidity_error DOUBLE PRECISION,
+    anomaly_score DOUBLE PRECISION,
+    model_version VARCHAR(100),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sensor health tracking
+CREATE TABLE IF NOT EXISTS sensor_health (
+    health_id BIGSERIAL PRIMARY KEY,
+    station_id VARCHAR(50) NOT NULL REFERENCES stations(station_id),
+    health_score DOUBLE PRECISION,
+    anomaly_count INTEGER DEFAULT 0,
+    prediction_error DOUBLE PRECISION,
+    communication_reliability DOUBLE PRECISION,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Operator alerts
+CREATE TABLE IF NOT EXISTS alerts (
+    alert_id BIGSERIAL PRIMARY KEY,
+    anomaly_id BIGINT REFERENCES anomalies(anomaly_id),
+    station_id VARCHAR(50) NOT NULL REFERENCES stations(station_id),
+    severity VARCHAR(30),
+    status VARCHAR(30) DEFAULT 'NEW',
+    message TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMPTZ
+);
