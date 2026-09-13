@@ -1,6 +1,6 @@
 """
 Data provider module for SkyGuard AI Streamlit Dashboard.
-Connects to FastAPI backend and seamlessly provides realistic, smooth physical telemetry trends.
+Provides smooth, realistic meteorological trends matching physical weather patterns.
 Strictly 3 sensors: Temperature, Pressure, Relative Humidity (no wind or weather).
 """
 from __future__ import annotations
@@ -9,7 +9,6 @@ import os
 import math
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-import requests
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 LAST_UPDATED = "14:32:08"
@@ -42,10 +41,18 @@ def delta(actual: float, expected: float) -> str:
 
 
 def generate_physical_trends(station_id: str, time_range: str = "3M") -> list[dict]:
-    """Generates continuous, strictly chronological physical time series with realistic diurnal cycles."""
-    pts = 84 if time_range == "7D" else (120 if time_range == "1M" else 180)
-    step_hours = 2 if time_range == "7D" else (6 if time_range == "1M" else 12)
-    end_time = datetime(2026, 9, 13, 14, 0, 0)
+    """Generates continuous, smooth, realistic meteorological curves matching physical weather trends."""
+    if time_range == "7D":
+        pts = 42  # every 4 hours for 7 days
+        step_hours = 4
+    elif time_range == "1M":
+        pts = 30  # 1 point per day for 30 days
+        step_hours = 24
+    else:  # 3M
+        pts = 90  # 1 point per day for 90 days
+        step_hours = 24
+
+    end_time = datetime(2025, 4, 27, 14, 30, 0)
 
     base_t = {"AWS001": 28.0, "AWS002": 30.5, "AWS003": 28.5, "AWS004": 24.5}.get(station_id, 26.0)
     base_p = {"AWS001": 1012.0, "AWS002": 1009.0, "AWS003": 1011.0, "AWS004": 1015.2}.get(station_id, 1012.0)
@@ -54,50 +61,59 @@ def generate_physical_trends(station_id: str, time_range: str = "3M") -> list[di
     records = []
     for i in range(pts):
         dt = end_time - timedelta(hours=step_hours * (pts - 1 - i))
-        ts_str = dt.strftime("%Y-%m-%d %H:%M")
-        lbl = dt.strftime("%b %d") if time_range != "7D" else dt.strftime("%a %H:%M")
+        ts_str = dt.strftime("%Y-%m-%d %H:%M") if time_range == "7D" else dt.strftime("%Y-%m-%d")
+        lbl = dt.strftime("%a %H:%M") if time_range == "7D" else dt.strftime("%b %d")
 
-        hr = dt.hour
-        # Diurnal physical cycles
-        diurnal_t = 4.5 * math.sin((hr - 8) * math.pi / 12)
-        diurnal_p = 1.8 * math.cos(hr * math.pi / 6)
-        diurnal_h = -7.0 * math.sin((hr - 8) * math.pi / 12)
+        prog = i / max(1, pts - 1)
 
-        # Macro trend wave
-        macro_t = 1.5 * math.sin(i / 15.0)
-        macro_p = 2.0 * math.cos(i / 20.0)
-        macro_h = -2.0 * math.sin(i / 15.0)
+        # Smooth seasonal envelope (gentle arc across the season)
+        s_t = 5.5 * math.sin(prog * math.pi)
+        s_p = -3.0 * math.sin(prog * math.pi)
+        s_h = -5.0 * math.sin(prog * math.pi)
 
-        exp_t = round(base_t + diurnal_t + macro_t, 1)
-        exp_p = round(base_p + diurnal_p + macro_p, 1)
-        exp_h = round(max(20.0, min(100.0, base_h + diurnal_h + macro_h)), 1)
+        # Synoptic scale weather front progression (wavelength ~10 days)
+        syn_t = 1.6 * math.sin(prog * 10.0) + 0.8 * math.cos(prog * 18.0)
+        syn_p = -1.8 * math.sin(prog * 10.0) - 0.9 * math.cos(prog * 18.0)
+        syn_h = 2.2 * math.sin(prog * 10.0) + 1.1 * math.cos(prog * 18.0)
 
-        # Minor sensor noise
-        noise_t = 0.2 * math.sin(i * 3.7)
-        noise_p = 0.3 * math.cos(i * 2.3)
-        noise_h = 0.4 * math.sin(i * 4.1)
+        # Diurnal day/night cycle only for 7D view where it renders cleanly
+        if time_range == "7D":
+            hr = dt.hour
+            d_t = 3.2 * math.sin((hr - 8) * math.pi / 12)
+            d_p = 1.0 * math.cos(hr * math.pi / 6)
+            d_h = -4.0 * math.sin((hr - 8) * math.pi / 12)
+        else:
+            d_t = d_p = d_h = 0.0
+
+        exp_t = round(base_t + s_t + syn_t + d_t, 1)
+        exp_p = round(base_p + s_p + syn_p + d_p, 1)
+        exp_h = round(max(25.0, min(95.0, base_h + s_h + syn_h + d_h)), 1)
+
+        # Actual closely follows Expected with mild natural variation
+        noise_t = 0.35 * math.sin(i * 1.3) + 0.2 * math.cos(i * 2.7)
+        noise_p = 0.45 * math.cos(i * 1.1) + 0.25 * math.sin(i * 2.2)
+        noise_h = 0.55 * math.sin(i * 1.4) + 0.3 * math.cos(i * 2.5)
 
         act_t = round(exp_t + noise_t, 1)
         act_p = round(exp_p + noise_p, 1)
-        act_h = round(max(15.0, min(100.0, exp_h + noise_h)), 1)
+        act_h = round(max(20.0, min(98.0, exp_h + noise_h)), 1)
 
-        # Station-specific realistic anomaly signatures
-        if station_id == "AWS001" and i >= pts - 6:
-            # Out of bounds rail / sudden surge
-            act_t = round(exp_t + 11.6, 1)
-            act_p = round(exp_p - 7.9, 1)
-            act_h = round(min(100.0, exp_h + 14.7), 1)
-        elif station_id == "AWS002" and i >= pts - 35:
-            # Gradual positive calibration drift
-            drift = min(2.2, (i - (pts - 35)) * 0.08)
+        # Anomaly divergence in the latest points
+        if station_id == "AWS001" and i >= pts - 5:
+            ramp = (i - (pts - 5)) / 4.0
+            act_t = round(exp_t + (11.6 * ramp), 1)
+            act_p = round(exp_p - (7.9 * ramp), 1)
+            act_h = round(min(98.0, exp_h + (14.7 * ramp)), 1)
+        elif station_id == "AWS002" and i >= pts - 20:
+            drift = min(2.2, (i - (pts - 20)) * 0.11)
             act_t = round(exp_t + drift, 1)
-            act_p = round(exp_p - 0.7, 1)
-            act_h = round(min(100.0, exp_h + 2.0), 1)
-        elif station_id == "AWS003" and i >= pts - 5:
-            # Critical multi-sensor spike
-            act_t = round(exp_t + 14.8, 1)
-            act_p = round(exp_p - 8.2, 1)
-            act_h = round(min(100.0, exp_h + 19.0), 1)
+            act_p = round(exp_p - (0.7 * (drift / 2.2)), 1)
+            act_h = round(min(98.0, exp_h + (2.0 * (drift / 2.2))), 1)
+        elif station_id == "AWS003" and i >= pts - 4:
+            ramp = (i - (pts - 4)) / 3.0
+            act_t = round(exp_t + (14.8 * ramp), 1)
+            act_p = round(exp_p - (8.2 * ramp), 1)
+            act_h = round(min(98.0, exp_h + (19.0 * ramp)), 1)
 
         records.append({
             "label": lbl,
@@ -113,16 +129,7 @@ def generate_physical_trends(station_id: str, time_range: str = "3M") -> list[di
 
 
 def filter_trend(trend: list[dict], range_key: str) -> list[dict]:
-    if not trend:
-        return []
-    total = len(trend)
-    if range_key == "7D":
-        pts = min(84, total)
-    elif range_key == "1M":
-        pts = min(120, total)
-    else:
-        pts = total
-    return trend[-pts:]
+    return trend
 
 
 def generate_station_readings(station_id: str) -> list[dict]:
@@ -135,10 +142,9 @@ def generate_station_readings(station_id: str) -> list[dict]:
     rows = []
     for i in range(1, 25):
         t = base_time - timedelta(minutes=(i - 1) * 5)
-        # Small natural variance
-        t_val = round(base_t - (i * 0.15) + (math.sin(i * 1.5) * 0.2), 1)
-        p_val = round(base_p + (i * 0.2) + (math.cos(i * 1.2) * 0.15), 1)
-        h_val = round(max(20.0, min(100.0, base_h - (i * 0.1) + (math.sin(i * 2.1) * 0.3))), 1)
+        t_val = round(base_t - (i * 0.12) + (math.sin(i * 1.5) * 0.15), 1)
+        p_val = round(base_p + (i * 0.18) + (math.cos(i * 1.2) * 0.1), 1)
+        h_val = round(max(20.0, min(100.0, base_h - (i * 0.08) + (math.sin(i * 2.1) * 0.2))), 1)
 
         rows.append({
             "id": i,
@@ -229,7 +235,7 @@ def get_station_anomalies_list(station_id: str) -> list[dict]:
     return logs.get(station_id, [])
 
 
-# Preset master stations
+# Preset master stations matching screenshot metrics
 STATIONS_CONFIG = [
     {
         "id": "AWS001",
@@ -239,18 +245,18 @@ STATIONS_CONFIG = [
         "lastRecorded": "2025-04-27 14:32:08",
         "sensorHealth": 94,
         "stationStatus": "Normal",
-        "temperature": 28.4,
-        "expectedTemp": 28.0,
-        "pressure": 1011.8,
-        "expectedPressure": 1011.0,
-        "humidity": 72.0,
-        "expectedHumidity": 70.0,
-        "anomalyScore": 0.15,
+        "temperature": 42.8,
+        "expectedTemp": 31.2,
+        "pressure": 1004.2,
+        "expectedPressure": 1012.1,
+        "humidity": 89.2,
+        "expectedHumidity": 74.5,
+        "anomalyScore": 0.87,
         "confidence": 92,
-        "anomalyStatus": "Normal",
-        "anomalyType": "NORMAL",
-        "reason": "Sensor operating normally within safe limits.",
-        "recommendedAction": "Routine telemetry check.",
+        "anomalyStatus": "Anomaly Detected",
+        "anomalyType": "OUT_OF_BOUNDS_RAIL",
+        "reason": "Temperature (+11.6°C) and RH (+14.7%) significantly higher than physical baseline.",
+        "recommendedAction": "Inspect ADC channel and check sensor probe.",
         "lastUpdated": "14:32:08",
     },
     {
@@ -326,7 +332,7 @@ def get_stations() -> list[dict]:
     return [dict(s) for s in STATIONS_CONFIG]
 
 
-def get_station(station_id: str | None) -> dict | None:
+def get_station(station_id: str | None, time_range: str = "3M") -> dict | None:
     if not station_id:
         return None
     normalized_id = station_id.upper().strip()
@@ -335,7 +341,7 @@ def get_station(station_id: str | None) -> dict | None:
         match = STATIONS_CONFIG[0]
 
     st_dict = dict(match)
-    st_dict["trend"] = generate_physical_trends(st_dict["id"], "3M")
+    st_dict["trend"] = generate_physical_trends(st_dict["id"], time_range)
     st_dict["readings"] = generate_station_readings(st_dict["id"])
     st_dict["anomalies"] = get_station_anomalies_list(st_dict["id"])
     return st_dict

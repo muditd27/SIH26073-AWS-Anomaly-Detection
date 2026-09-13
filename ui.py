@@ -25,11 +25,11 @@ section[data-testid="stSidebar"], [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 
 .block-container {
-  padding: 18px 1rem 28px !important;
-  max-width: 1200px !important;
+  padding: 16px 1rem 24px !important;
+  max-width: 1240px !important;
 }
 
-div[data-testid="stVerticalBlock"] > div { gap: 0.55rem; }
+div[data-testid="stVerticalBlock"] > div { gap: 0.5rem; }
 
 .topbar, .hero, .station-card, .panel, .kpi, .meta-card {
   background: #fff;
@@ -97,8 +97,8 @@ div[data-testid="stVerticalBlock"] > div { gap: 0.55rem; }
 .idrow strong, .detail-title h1 { font-size: 20px; margin: 0; }
 .station-name { color: #7b93b0; font-size: 13px; margin: 2px 0 0; }
 .chevron { color: #93c5fd; font-size: 20px; }
-.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-.badge .dot { width: 8px; height: 8px; box-shadow: none; }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.badge .dot { width: 6px; height: 6px; box-shadow: none; }
 .badge.ok { color: #16a34a; background: #ecfdf3; } .badge.ok .dot { background: #22c55e; }
 .badge.warn { color: #d97706; background: #fff7ed; } .badge.warn .dot { background: #f59e0b; }
 .badge.bad { color: #e11d48; background: #fff1f2; } .badge.bad .dot { background: #f43f5e; }
@@ -122,68 +122,142 @@ div[data-testid="stVerticalBlock"] > div { gap: 0.55rem; }
 .page-foot a { color: inherit; text-decoration: none; }
 .tagline { color: #60a5fa; font-weight: 600; }
 
-.detail-head { display: flex; justify-content: space-between; gap: 16px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
+.detail-head { display: flex; justify-content: space-between; gap: 16px; margin-top: 14px; align-items: center; flex-wrap: wrap; }
 .detail-title, .detail-meta { display: flex; align-items: center; gap: 12px; }
-.antenna { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: #fff; box-shadow: 0 10px 30px rgba(37,99,235,0.08); font-size: 22px; }
-.detail-title h1 { font-size: 28px; }
-.meta-card { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 18px; min-height: 72px; }
-.meta-card--ring { flex-direction: column; min-width: 110px; }
+.antenna { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: #fff; box-shadow: 0 10px 30px rgba(37,99,235,0.08); font-size: 20px; }
+.detail-title h1 { font-size: 26px; }
+.meta-card { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 18px; min-height: 64px; }
+.meta-card--ring { flex-direction: column; min-width: 100px; }
 .ok-text { color: #16a34a; } .bad-text { color: #e11d48; } .warn-text { color: #d97706; }
 
-.kpi-row { display: grid; grid-template-columns: 1fr 1fr 1fr 0.85fr 1.15fr; gap: 12px; margin: 16px 0; }
-.kpi { padding: 16px 18px; border-radius: 22px; }
-.kpi-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #64748b; }
-.kpi-value { margin: 10px 0 8px; font-size: 28px; font-weight: 800; }
-.kpi-sub, .kpi p { margin: 0; color: #7b93b0; font-size: 12px; line-height: 1.45; }
-.kpi--temp { background: #fff1f2; } .kpi--press { background: #eff6ff; } .kpi--hum { background: #f0f9ff; }
-.kpi--alert { background: #fff1f2; }
-.kpi--reason strong { display: block; margin: 8px 0; font-size: 14px; }
+/* Perfectly aligned 5 KPI Cards */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+.kpi {
+  padding: 14px 16px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  background: #ffffff;
+}
+.kpi-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #64748b; }
+.kpi-value { margin: 6px 0 4px; font-size: 26px; font-weight: 800; line-height: 1.1; }
+.kpi-sub { margin: 0; color: #7b93b0; font-size: 11px; line-height: 1.4; }
+.kpi--temp { background: #fff1f2; }
+.kpi--press { background: #eff6ff; }
+.kpi--hum { background: #f0f9ff; }
+.kpi--score { background: #faf5ff; }
+.kpi--reason { background: #fef2f2; }
+.kpi--normal { background: #f0fdf4; }
 
-.panel { padding: 16px 18px 12px; border-radius: 24px; background: #fff; }
-.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.panel-head h3 { margin: 0; font-size: 16px; }
-.panel-head span { color: #7b93b0; font-weight: 500; font-size: 12px; }
+.panel { padding: 14px 16px 10px; border-radius: 22px; background: #fff; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.panel-head h3 { margin: 0; font-size: 15px; font-weight: 700; }
 .legend { color: #64748b; font-size: 12px; }
-.swatch { width: 18px; height: 3px; display: inline-block; margin: 0 6px 0 10px; border-radius: 99px; }
+.swatch { width: 16px; height: 3px; display: inline-block; margin: 0 4px 0 8px; border-radius: 99px; }
 .swatch-actual { background: #f43f5e; } .swatch-expected { background: #3b82f6; }
 
-table.raw { width: 100%; border-collapse: collapse; font-size: 12px; }
-table.raw th, table.raw td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eef3f9; white-space: nowrap; }
-table.raw th { color: #94a3b8; font-weight: 600; }
-
+/* Radio segmented pill switcher (hiding radio circle) */
 .stRadio { margin-bottom: 0 !important; }
-div[data-testid="stRadio"] > label { display: none; }
-div[role="radiogroup"] { justify-content: flex-end; background: #eff6ff; padding: 4px; border-radius: 999px; gap: 4px; }
+div[data-testid="stRadio"] > label { display: none !important; }
+div[role="radiogroup"] { justify-content: flex-end; background: #eff6ff; padding: 3px; border-radius: 999px; gap: 2px; }
+div[role="radiogroup"] div[data-testid="stRadioButtonCustomObject"] { display: none !important; }
 div[role="radiogroup"] label {
-  background: transparent !important; padding: 6px 10px !important; border-radius: 999px !important;
-  font-weight: 700 !important; color: #64748b !important;
+  background: transparent !important; padding: 5px 12px !important; border-radius: 999px !important;
+  font-weight: 700 !important; font-size: 12px !important; color: #64748b !important; cursor: pointer;
 }
 div[role="radiogroup"] label:has(input:checked) { background: #3b82f6 !important; color: #fff !important; }
 
 /* Clean styling for Streamlit tabs */
 div[data-testid="stTabs"] {
   background: #ffffff;
-  border-radius: 24px;
-  padding: 14px 18px;
+  border-radius: 22px;
+  padding: 12px 14px;
   border: 1px solid rgba(255,255,255,0.8);
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
 }
 button[data-baseweb="tab"] {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   font-weight: 700 !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   color: #64748b !important;
-  border-radius: 12px !important;
-  padding: 8px 16px !important;
+  border-radius: 10px !important;
+  padding: 6px 14px !important;
 }
 button[data-baseweb="tab"][aria-selected="true"] {
   color: #2563eb !important;
   background: #eff6ff !important;
 }
 
+/* Subtle, sleek expand buttons in chart header */
+div[data-testid="stColumn"] div.stButton > button {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 1 !important;
+  transition: all 0.2s ease !important;
+}
+div[data-testid="stColumn"] div.stButton > button:hover {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Clean Anomaly Log table with proper column wrapping & alignment */
+table.anom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+table.anom-table th, table.anom-table td {
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+table.anom-table th {
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Clean Raw Telemetry table */
+table.raw-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+table.raw-table th, table.raw-table td {
+  text-align: left;
+  padding: 7px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+table.raw-table th {
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 div[data-testid="stPlotlyChart"] {
   background: #fff;
-  border-radius: 0 0 24px 24px;
+  border-radius: 0 0 20px 20px;
 }
 
 @media (max-width: 980px) {
@@ -194,9 +268,9 @@ div[data-testid="stPlotlyChart"] {
 """
 
 
-def health_ring(value: int, tone: str, size: int = 54) -> str:
+def health_ring(value: int, tone: str, size: int = 50) -> str:
     colors = {"ok": "#22c55e", "warn": "#f59e0b", "bad": "#f43f5e"}
-    stroke = 6
+    stroke = 5
     radius = (size - stroke) / 2
     circ = 2 * math.pi * radius
     offset = circ * (1 - value / 100)
