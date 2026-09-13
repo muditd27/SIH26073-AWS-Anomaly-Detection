@@ -209,7 +209,7 @@ def sparkline() -> str:
     """
 
 
-def header_html() -> str:
+def header_html(last_updated: str = LAST_UPDATED) -> str:
     return f"""
     <div class="topbar">
       <div class="topbar-left">
@@ -224,7 +224,7 @@ def header_html() -> str:
       </div>
       <div class="topbar-right">
         <div class="status-pill"><span class="dot"></span> System Operational</div>
-        <div class="updated-pill">◷ Last Updated: {LAST_UPDATED}</div>
+        <div class="updated-pill">◷ Last Updated: {last_updated}</div>
         <div class="nexora">⬡ Nexora</div>
       </div>
     </div>

@@ -1,19 +1,39 @@
 """
 SkyGuard AI — Powered by Nexora
-Main Entrypoint for Streamlit Application
+5-Page Streamlit Application Entrypoint
+- Page 1: Overview Summary Dashboard (? / no query param)
+- Pages 2–5: Station Detail Work Pages (?station=AWS001..AWS004)
 """
-import sys
-from pathlib import Path
+from __future__ import annotations
 
-root_dir = Path(__file__).resolve().parent
-streamlit_dir = root_dir / "streamlit_app"
+import streamlit as st
 
-if str(streamlit_dir) not in sys.path:
-    sys.path.insert(0, str(streamlit_dir))
-if str(root_dir) not in sys.path:
-    sys.path.insert(0, str(root_dir))
+from data import get_station, get_stations
+from station_detail import render_station_detail
+from stations_page import render_stations_page
+from ui import header_html, inject_css
 
-from streamlit_app.app import main
+st.set_page_config(
+    page_title="SkyGuard AI — Powered by Nexora",
+    page_icon="☁️",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
-if __name__ == "__main__":
-    main()
+st.markdown(inject_css(), unsafe_allow_html=True)
+
+# Station selected via query parameter (?station=AWS001)
+station_id = st.query_params.get("station")
+stations = get_stations()
+station = get_station(station_id) if station_id else None
+
+last_updated = stations[0]["lastUpdated"] if stations and "lastUpdated" in stations[0] else "14:32:08"
+st.markdown(header_html(last_updated), unsafe_allow_html=True)
+
+if station_id and not station:
+    st.query_params.clear()
+    st.markdown(render_stations_page(stations), unsafe_allow_html=True)
+elif station:
+    render_station_detail(station)
+else:
+    st.markdown(render_stations_page(stations), unsafe_allow_html=True)

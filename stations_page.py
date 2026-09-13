@@ -1,16 +1,20 @@
-"""Page 1 — station picker. Click any AWS card to open the detail page."""
-
+"""
+Page 1 — station picker. Click any AWS card to open the detail page.
+Matches Image 1 layout with 4 station cards and live network anomalies.
+"""
 from __future__ import annotations
 
-
-from data import STATIONS, anomaly_class
+from data import get_stations, anomaly_class
 from ui import card_badge, card_health, humidity_label, sparkline
 
 
 def station_card(station: dict) -> str:
-    anom = anomaly_class(station["anomalyStatus"])
+    anom = anomaly_class(station.get("anomalyStatus", "Normal"))
     icons = {"ok": "✓", "warn": "⚠", "bad": "⚠"}
-    humidity = humidity_label(station["humidity"])
+    humidity = humidity_label(station.get("humidity", 72.0))
+    anom_type = station.get("anomalyType", "")
+    anom_sub = f"Status ({anom_type})" if anom_type and anom_type != "NORMAL" else "Anomaly Status"
+
     return "\n".join(line.lstrip() for line in f"""
     <a class="station-card" href="?station={station['id']}" target="_self">
       <div class="station-card-top">
@@ -31,14 +35,27 @@ def station_card(station: dict) -> str:
       </div>
       <div class="station-card-bottom">
         <div class="health-cell">{card_health(station)}<span>Sensor Health</span></div>
-        <div class="anomaly-cell {anom}">{icons[anom]}<div><strong>{station['anomalyStatus']}</strong><span>Anomaly Status</span></div></div>
+        <div class="anomaly-cell {anom}">{icons.get(anom, '✓')}<div><strong>{station['anomalyStatus']}</strong><span>{anom_sub}</span></div></div>
         <div class="time-cell">◷<div><strong>{station['lastUpdated']}</strong><span>Last Updated</span></div></div>
       </div>
     </a>
     """.splitlines())
 
 
-def render_stations_page() -> str:
+def render_stations_page(stations: list[dict] | None = None) -> str:
+    if stations is None:
+        stations = get_stations()
+
+    if not stations:
+        cards_html = """
+        <div class="panel" style="padding: 24px; text-align: center; grid-column: 1 / -1;">
+          <h3>⚠️ Initializing SkyGuard AI Telemetry</h3>
+          <p style="color: #64748b;">Loading telemetry and predictions...</p>
+        </div>
+        """
+    else:
+        cards_html = "".join(station_card(station) for station in stations)
+
     return "\n".join(line.lstrip() for line in f"""
     <section class="hero">
       <div>
@@ -69,7 +86,7 @@ def render_stations_page() -> str:
       </div>
     </section>
     <div class="station-grid">
-      {''.join(station_card(station) for station in STATIONS)}
+      {cards_html}
     </div>
     <footer class="page-foot">
       <span>SkyGuard AI &nbsp;›&nbsp; Stations</span>
