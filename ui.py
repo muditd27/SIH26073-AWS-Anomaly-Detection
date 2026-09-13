@@ -26,7 +26,7 @@ section[data-testid="stSidebar"], [data-testid="collapsedControl"],
 
 .block-container {
   padding: 18px 1rem 28px !important;
-  max-width: 1180px !important;
+  max-width: 1200px !important;
 }
 
 div[data-testid="stVerticalBlock"] > div { gap: 0.55rem; }
@@ -160,6 +160,27 @@ div[role="radiogroup"] label {
 }
 div[role="radiogroup"] label:has(input:checked) { background: #3b82f6 !important; color: #fff !important; }
 
+/* Clean styling for Streamlit tabs */
+div[data-testid="stTabs"] {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255,255,255,0.8);
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.08);
+}
+button[data-baseweb="tab"] {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+  color: #2563eb !important;
+  background: #eff6ff !important;
+}
+
 div[data-testid="stPlotlyChart"] {
   background: #fff;
   border-radius: 0 0 24px 24px;
@@ -179,56 +200,56 @@ def health_ring(value: int, tone: str, size: int = 54) -> str:
     radius = (size - stroke) / 2
     circ = 2 * math.pi * radius
     offset = circ * (1 - value / 100)
-    color = colors[tone]
-    return f"""
-    <div class="health-ring" style="width:{size}px;height:{size}px">
-      <svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">
-        <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="#e8eef7" stroke-width="{stroke}" />
-        <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="{stroke}"
-          stroke-linecap="round" stroke-dasharray="{circ:.2f}" stroke-dashoffset="{offset:.2f}"
-          transform="rotate(-90 {size/2} {size/2})" />
-      </svg>
-      <span>{value}%</span>
-    </div>
-    """
+    color = colors.get(tone, "#22c55e")
+    return (
+        f'<div class="health-ring" style="width:{size}px;height:{size}px">'
+        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
+        f'<circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="#e8eef7" stroke-width="{stroke}" />'
+        f'<circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="{stroke}" '
+        f'stroke-linecap="round" stroke-dasharray="{circ:.2f}" stroke-dashoffset="{offset:.2f}" '
+        f'transform="rotate(-90 {size/2} {size/2})" />'
+        f'</svg>'
+        f'<span>{value}%</span>'
+        f'</div>'
+    )
 
 
 def sparkline() -> str:
-    return """
-    <svg class="hero-spark" viewBox="0 0 280 110" fill="none" width="100%" height="120">
-      <defs>
-        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.35" />
-          <stop offset="100%" stop-color="#60A5FA" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-      <path d="M8 78 C 28 74, 40 62, 58 58 C 80 52, 96 70, 118 64 C 142 57, 158 36, 180 32 C 204 27, 220 48, 242 30 C 254 22, 266 18, 274 14 L 274 104 L 8 104 Z" fill="url(#sparkFill)" />
-      <path d="M8 78 C 28 74, 40 62, 58 58 C 80 52, 96 70, 118 64 C 142 57, 158 36, 180 32 C 204 27, 220 48, 242 30 C 254 22, 266 18, 274 14" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" />
-      <circle cx="242" cy="30" r="6" fill="#FB7185" />
-    </svg>
-    """
+    return (
+        '<svg class="hero-spark" viewBox="0 0 280 110" fill="none" width="100%" height="120">'
+        '<defs>'
+        '<linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0%" stop-color="#60A5FA" stop-opacity="0.35" />'
+        '<stop offset="100%" stop-color="#60A5FA" stop-opacity="0" />'
+        '</linearGradient>'
+        '</defs>'
+        '<path d="M8 78 C 28 74, 40 62, 58 58 C 80 52, 96 70, 118 64 C 142 57, 158 36, 180 32 C 204 27, 220 48, 242 30 C 254 22, 266 18, 274 14 L 274 104 L 8 104 Z" fill="url(#sparkFill)" />'
+        '<path d="M8 78 C 28 74, 40 62, 58 58 C 80 52, 96 70, 118 64 C 142 57, 158 36, 180 32 C 204 27, 220 48, 242 30 C 254 22, 266 18, 274 14" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" />'
+        '<circle cx="242" cy="30" r="6" fill="#FB7185" />'
+        '</svg>'
+    )
 
 
 def header_html(last_updated: str = LAST_UPDATED) -> str:
-    return f"""
-    <div class="topbar">
-      <div class="topbar-left">
-        <a class="home-btn" href="?" target="_self" aria-label="Back to stations">⌂</a>
-        <div class="brand">
-          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#60A5FA,#2563EB);display:grid;place-items:center;color:white;font-size:16px">☁</div>
-          <div>
-            <div class="brand-name">SkyGuard AI</div>
-            <div class="brand-sub">Powered by Nexora</div>
-          </div>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <div class="status-pill"><span class="dot"></span> System Operational</div>
-        <div class="updated-pill">◷ Last Updated: {last_updated}</div>
-        <div class="nexora">⬡ Nexora</div>
-      </div>
-    </div>
-    """
+    return (
+        '<div class="topbar">'
+        '<div class="topbar-left">'
+        '<a class="home-btn" href="?" target="_self" aria-label="Back to stations">⌂</a>'
+        '<div class="brand">'
+        '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#60A5FA,#2563EB);display:grid;place-items:center;color:white;font-size:16px">☁</div>'
+        '<div>'
+        '<div class="brand-name">SkyGuard AI</div>'
+        '<div class="brand-sub">Powered by Nexora</div>'
+        '</div>'
+        '</div>'
+        '</div>'
+        '<div class="topbar-right">'
+        '<div class="status-pill"><span class="dot"></span> System Operational</div>'
+        f'<div class="updated-pill">◷ Last Updated: {last_updated}</div>'
+        '<div class="nexora">⬡ Nexora</div>'
+        '</div>'
+        '</div>'
+    )
 
 
 def station_status_class(status: str) -> str:
