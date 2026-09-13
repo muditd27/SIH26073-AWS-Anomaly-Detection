@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas.telemetry import TelemetryCreate
 from app.services.ml_service import predict_weather
@@ -12,11 +13,33 @@ from app.api.anomalies import router as anomalies_router
 
 app = FastAPI(title="SIH26073 AWS Anomaly Detection")
 
+
+# ---------------------------------------------------------
+# CORS - allow frontend to communicate with FastAPI
+# ---------------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ---------------------------------------------------------
+# API Routers
+# ---------------------------------------------------------
+
 app.include_router(anomalies_router)
 app.include_router(alerts_router)
 app.include_router(sensor_health_router)
 app.include_router(stations_router)
 
+
+# ---------------------------------------------------------
+# Root
+# ---------------------------------------------------------
 
 @app.get("/")
 def root():
@@ -25,12 +48,62 @@ def root():
     }
 
 
+# ---------------------------------------------------------
+# GET TELEMETRY
+# Used by frontend dashboard
+# ---------------------------------------------------------
+
+@app.get("/telemetry")
+def get_telemetry():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            telemetry_id,
+            station_id,
+            timestamp,
+            temperature,
+            humidity,
+            pressure
+        FROM telemetry
+        ORDER BY timestamp DESC
+        LIMIT 100
+        """
+    )
+
+    rows = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return [
+        {
+            "telemetry_id": row[0],
+            "station_id": row[1],
+            "timestamp": row[2],
+            "temperature": row[3],
+            "humidity": row[4],
+            "pressure": row[5],
+        }
+        for row in rows
+    ]
+
+
+# ---------------------------------------------------------
+# POST TELEMETRY
+# Complete ML processing pipeline
+# ---------------------------------------------------------
+
 @app.post("/telemetry")
 def create_telemetry(data: TelemetryCreate):
 
     # ---------------------------------------------------------
     # 1. Store incoming telemetry
     # ---------------------------------------------------------
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -58,12 +131,15 @@ def create_telemetry(data: TelemetryCreate):
     telemetry_id = cursor.fetchone()[0]
 
     connection.commit()
+
     cursor.close()
     connection.close()
+
 
     # ---------------------------------------------------------
     # 2. Get recent history from all stations
     # ---------------------------------------------------------
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -114,9 +190,11 @@ def create_telemetry(data: TelemetryCreate):
         for row in rows
     ]
 
+
     # ---------------------------------------------------------
     # 3. Current reading for ML pipeline
     # ---------------------------------------------------------
+
     new_records = [
         {
             "telemetry_id": telemetry_id,
@@ -128,9 +206,11 @@ def create_telemetry(data: TelemetryCreate):
         }
     ]
 
+
     # ---------------------------------------------------------
     # 4. Get previous sensor health
     # ---------------------------------------------------------
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -154,7 +234,6 @@ def create_telemetry(data: TelemetryCreate):
         for row in health_rows
     }
 
-    # Default health for stations without previous records
     for station_id in [
         "AWS_01",
         "AWS_02",
@@ -166,18 +245,22 @@ def create_telemetry(data: TelemetryCreate):
             100.0
         )
 
+
     # ---------------------------------------------------------
     # 5. Run complete ML pipeline
     # ---------------------------------------------------------
+
     ml_result = predict_weather(
         new_records=new_records,
         historical_buffer=historical_buffer,
         previous_sensor_health=previous_sensor_health,
     )
 
+
     # ---------------------------------------------------------
     # 6. Extract ML results
     # ---------------------------------------------------------
+
     classification = ml_result["classification"]
 
     anomaly_type = classification["anomaly_type"]
@@ -208,13 +291,13 @@ def create_telemetry(data: TelemetryCreate):
         "Inspect the sensor"
     )
 
-    # The teammate pipeline frontend result does not currently
-    # provide affected_sensors, so keep this field empty.
     affected_sensors = ""
+
 
     # ---------------------------------------------------------
     # 7. Save prediction
     # ---------------------------------------------------------
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -252,12 +335,15 @@ def create_telemetry(data: TelemetryCreate):
     )
 
     connection.commit()
+
     cursor.close()
     connection.close()
+
 
     # ---------------------------------------------------------
     # 8. Save anomaly and create alert
     # ---------------------------------------------------------
+
     anomaly_id = None
 
     if is_anomaly:
@@ -302,10 +388,13 @@ def create_telemetry(data: TelemetryCreate):
         anomaly_id = cursor.fetchone()[0]
 
         connection.commit()
+
         cursor.close()
         connection.close()
 
+
         # Create alert
+
         connection = get_connection()
         cursor = connection.cursor()
 
@@ -330,12 +419,15 @@ def create_telemetry(data: TelemetryCreate):
         )
 
         connection.commit()
+
         cursor.close()
         connection.close()
+
 
     # ---------------------------------------------------------
     # 9. Calculate communication reliability
     # ---------------------------------------------------------
+
     connection = get_connection()
     cursor = connection.cursor()
 
@@ -356,9 +448,11 @@ def create_telemetry(data: TelemetryCreate):
         1.0
     )
 
+
     # ---------------------------------------------------------
     # 10. Get anomaly count
     # ---------------------------------------------------------
+
     cursor.execute(
         """
         SELECT COUNT(*)
@@ -370,18 +464,22 @@ def create_telemetry(data: TelemetryCreate):
 
     anomaly_count = cursor.fetchone()[0]
 
+
     # ---------------------------------------------------------
     # 11. Calculate prediction error
     # ---------------------------------------------------------
+
     prediction_error = (
         abs(differences["temperature_error"])
         + abs(differences["pressure_error"])
         + abs(differences["humidity_error"])
     ) / 3.0
 
+
     # ---------------------------------------------------------
     # 12. Get ML sensor health
     # ---------------------------------------------------------
+
     sensor_health = classification.get(
         "updated_sensor_health",
         100.0
@@ -395,9 +493,11 @@ def create_telemetry(data: TelemetryCreate):
         )
     )
 
+
     # ---------------------------------------------------------
     # 13. Save sensor health
     # ---------------------------------------------------------
+
     cursor.execute(
         """
         INSERT INTO sensor_health (
@@ -419,12 +519,15 @@ def create_telemetry(data: TelemetryCreate):
     )
 
     connection.commit()
+
     cursor.close()
     connection.close()
+
 
     # ---------------------------------------------------------
     # 14. Return API response
     # ---------------------------------------------------------
+
     return {
         "message": "Telemetry processed successfully",
 
