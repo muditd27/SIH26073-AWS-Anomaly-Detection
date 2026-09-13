@@ -1,4 +1,3 @@
-
 # SkyGuard AI
 
 Streamlit dashboard from the SkyGuard / Nexora mockups.
