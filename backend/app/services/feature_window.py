@@ -1,4 +1,4 @@
-from app.db.database import get_connection
+from backend.app.db.database import get_connection
 
 
 def get_latest_window(station_id: str, limit: int = 97):

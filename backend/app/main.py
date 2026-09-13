@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.schemas.telemetry import TelemetryCreate
-from app.services.ml_service import predict_weather
-from app.db.database import get_connection
+from backend.app.schemas.telemetry import TelemetryCreate
+from backend.app.services.ml_service import predict_weather
+from backend.app.db.database import get_connection
 
-from app.api.stations import router as stations_router
-from app.api.sensor_health import router as sensor_health_router
-from app.api.alerts import router as alerts_router
-from app.api.anomalies import router as anomalies_router
+from backend.app.api.stations import router as stations_router
+from backend.app.api.sensor_health import router as sensor_health_router
+from backend.app.api.alerts import router as alerts_router
+from backend.app.api.anomalies import router as anomalies_router
+from backend.app.api.dashboard import router as dashboard_router
 
 
 app = FastAPI(title="SIH26073 AWS Anomaly Detection")
@@ -35,6 +36,7 @@ app.include_router(anomalies_router)
 app.include_router(alerts_router)
 app.include_router(sensor_health_router)
 app.include_router(stations_router)
+app.include_router(dashboard_router)
 
 
 # ---------------------------------------------------------
@@ -182,7 +184,7 @@ def create_telemetry(data: TelemetryCreate):
         {
             "telemetry_id": row[0],
             "station_id": row[1],
-            "timestamp": row[2],
+            "timestamp": row[2].replace(tzinfo=None) if hasattr(row[2], "replace") and getattr(row[2], "tzinfo", None) else row[2],
             "temperature": row[3],
             "pressure": row[4],
             "relative_humidity": row[5],
@@ -195,11 +197,13 @@ def create_telemetry(data: TelemetryCreate):
     # 3. Current reading for ML pipeline
     # ---------------------------------------------------------
 
+    ts_naive = data.timestamp.replace(tzinfo=None) if hasattr(data.timestamp, "replace") and getattr(data.timestamp, "tzinfo", None) else data.timestamp
+
     new_records = [
         {
             "telemetry_id": telemetry_id,
             "station_id": data.station_id,
-            "timestamp": data.timestamp,
+            "timestamp": ts_naive,
             "temperature": data.temperature,
             "pressure": data.pressure,
             "relative_humidity": data.humidity,

@@ -1,0 +1,9 @@
+{
+    "model_name": "IF_2",
+    "best_threshold": -0.10099999999999965,
+    "features": [
+        "temperature",
+        "pressure",
+        "relative_humidity"
+    ]
+}
