@@ -5,7 +5,6 @@ Features:
 - Header with station identity, connectivity badge, circular health gauge, and status pill
 - 5 KPI metric cards: Temperature, Pressure, Relative Humidity, Anomaly Score, Anomaly Status & SHAP Reason
 - 3 smooth physical Plotly trend graphs (Temp, Pres, RH) with unified hover tooltips (Actual, Expected, Delta)
-  and sleek fullscreen expand controls
 - Dual tabs: [⚠️ Anomaly Log (N)] and [📊 Raw Telemetry]
 - Strictly no wind or weather columns per problem statement
 """
@@ -29,11 +28,10 @@ def create_trend_chart(
     df: pd.DataFrame,
     actual_col: str,
     expected_col: str,
-    title: str,
     unit: str,
     color_actual: str = "#f43f5e",
     color_expected: str = "#3b82f6",
-    height: int = 215,
+    height: int = 210,
 ) -> go.Figure:
     """Builds interactive Plotly chart with smooth continuous curves and unified hover tooltips."""
     fig = go.Figure()
@@ -57,7 +55,7 @@ def create_trend_chart(
                 mode="lines",
                 name="Expected",
                 line=dict(color=color_expected, width=2.2, dash="dash"),
-                hovertemplate=f"<b>Expected</b>: %{{y:.2f}} {unit}<extra></extra>",
+                hovertemplate=f"Expected: %{{y:.2f}} {unit}<extra></extra>",
             )
         )
 
@@ -69,7 +67,7 @@ def create_trend_chart(
                 mode="lines",
                 name="Actual",
                 line=dict(color=color_actual, width=2.2),
-                hovertemplate=f"<b>Actual</b>: %{{y:.2f}} {unit}<extra></extra>",
+                hovertemplate=f"Actual: %{{y:.2f}} {unit}<extra></extra>",
             )
         )
     else:
@@ -77,7 +75,7 @@ def create_trend_chart(
 
     fig.update_layout(
         height=height,
-        margin=dict(l=45, r=15, t=18, b=28),
+        margin=dict(l=45, r=15, t=10, b=26),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="#f8fafc",
         hovermode="x unified",
@@ -87,19 +85,11 @@ def create_trend_chart(
             font_family="Plus Jakarta Sans, sans-serif",
             bordercolor="#cbd5e1",
         ),
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            font=dict(size=11, color="#64748b"),
-        ),
+        showlegend=False,
         xaxis=dict(
             showgrid=False,
             tickfont=dict(size=10, color="#94a3b8"),
-            nticks=6,
+            nticks=7,
         ),
         yaxis=dict(
             range=y_range,
@@ -110,28 +100,6 @@ def create_trend_chart(
         ),
     )
     return fig
-
-
-def render_fullscreen_modal(station: dict, chart_type: str, trend_df: pd.DataFrame) -> None:
-    """Renders expanded fullscreen view for the selected sensor graph."""
-    st.markdown("---")
-    col1, col2 = st.columns([0.82, 0.18])
-    with col1:
-        st.subheader(f"🔍 Fullscreen Analysis — {chart_type} ({station['id']})")
-    with col2:
-        if st.button("✖ Close Fullscreen", key="btn_close_fs", type="primary", use_container_width=True):
-            st.session_state["fullscreen_chart"] = None
-            st.rerun()
-
-    if chart_type == "Temperature":
-        fig = create_trend_chart(trend_df, "tempActual", "tempExpected", "Temperature Trend Analysis", "°C", height=450)
-    elif chart_type == "Pressure":
-        fig = create_trend_chart(trend_df, "pressActual", "pressExpected", "Barometric Pressure Analysis", "hPa", height=450)
-    else:
-        fig = create_trend_chart(trend_df, "humActual", "humExpected", "Relative Humidity Analysis", "%", height=450)
-
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": True, "displaylogo": False})
-    st.markdown("---")
 
 
 def render_station_detail(station: dict) -> None:
@@ -252,49 +220,24 @@ def render_station_detail(station: dict) -> None:
         plotly_config = {
             "displayModeBar": True,
             "displaylogo": False,
-            "modeBarButtonsToAdd": ["zoom2d", "pan2d", "resetScale2d"],
+            "modeBarButtonsToRemove": ["lasso2d", "select2d"],
             "responsive": True,
         }
 
-        # Fullscreen Modal View
-        if st.session_state.get("fullscreen_chart"):
-            render_fullscreen_modal(station, st.session_state["fullscreen_chart"], trend_df)
-
         if not trend_df.empty:
             # 1. Temperature Chart
-            head_col1, head_col2 = st.columns([0.80, 0.20])
-            with head_col1:
-                render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; padding-top:4px;'>🌡 Temperature (°C)</div>")
-            with head_col2:
-                if st.button("⛶ Fullscreen", key="btn_fs_temp", use_container_width=True):
-                    st.session_state["fullscreen_chart"] = "Temperature"
-                    st.rerun()
-
-            fig_temp = create_trend_chart(trend_df, "tempActual", "tempExpected", "Temperature (°C)", "°C")
+            render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; margin:10px 0 3px 2px;'>🌡 Temperature (°C)</div>")
+            fig_temp = create_trend_chart(trend_df, "tempActual", "tempExpected", "°C")
             st.plotly_chart(fig_temp, use_container_width=True, config=plotly_config)
 
             # 2. Pressure Chart
-            head_col1, head_col2 = st.columns([0.80, 0.20])
-            with head_col1:
-                render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; padding-top:4px;'>◎ Pressure (hPa)</div>")
-            with head_col2:
-                if st.button("⛶ Fullscreen", key="btn_fs_press", use_container_width=True):
-                    st.session_state["fullscreen_chart"] = "Pressure"
-                    st.rerun()
-
-            fig_press = create_trend_chart(trend_df, "pressActual", "pressExpected", "Pressure (hPa)", "hPa")
+            render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; margin:10px 0 3px 2px;'>◎ Pressure (hPa)</div>")
+            fig_press = create_trend_chart(trend_df, "pressActual", "pressExpected", "hPa")
             st.plotly_chart(fig_press, use_container_width=True, config=plotly_config)
 
             # 3. Relative Humidity Chart
-            head_col1, head_col2 = st.columns([0.80, 0.20])
-            with head_col1:
-                render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; padding-top:4px;'>💧 Relative Humidity (%)</div>")
-            with head_col2:
-                if st.button("⛶ Fullscreen", key="btn_fs_hum", use_container_width=True):
-                    st.session_state["fullscreen_chart"] = "Relative Humidity"
-                    st.rerun()
-
-            fig_hum = create_trend_chart(trend_df, "humActual", "humExpected", "Relative Humidity (%)", "%")
+            render_html("<div style='font-size:13px; font-weight:700; color:#1e293b; margin:10px 0 3px 2px;'>💧 Relative Humidity (%)</div>")
+            fig_hum = create_trend_chart(trend_df, "humActual", "humExpected", "%")
             st.plotly_chart(fig_hum, use_container_width=True, config=plotly_config)
 
         else:
@@ -319,17 +262,17 @@ def render_station_detail(station: dict) -> None:
                     date_short = time_val.split(" ")[0] if " " in time_val else ""
                     rows.append(
                         f"<tr>"
-                        f"<td style='width:28%;'>"
+                        f"<td style='width:25%;'>"
                         f"<b>#{a.get('id', '—')}</b><br>"
                         f"<span style='color:#94a3b8; font-size:10px;'>{date_short} {time_short}</span>"
                         f"</td>"
-                        f"<td style='width:28%;'>"
+                        f"<td style='width:25%;'>"
                         f"<span class='badge {badge_class}'>{sev}</span><br>"
                         f"<code style='font-size:10px; color:#475569;'>{a.get('type', 'ANOMALY')}</code>"
                         f"</td>"
-                        f"<td style='width:44%;'>"
-                        f"<div style='font-size:11px; font-weight:600; color:#1e293b; line-height:1.3;'>{a.get('message', 'Deviation detected')}</div>"
-                        f"<div style='font-size:10px; color:#64748b; margin-top:2px;'><b>Action:</b> {a.get('action', 'Inspect')}</div>"
+                        f"<td style='width:50%; word-break:break-word;'>"
+                        f"<div style='font-size:11px; font-weight:600; color:#1e293b; line-height:1.35;'>{a.get('message', 'Deviation detected')}</div>"
+                        f"<div style='font-size:10px; color:#64748b; margin-top:3px;'><b>Action:</b> {a.get('action', 'Inspect')}</div>"
                         f"</td>"
                         f"</tr>"
                     )
@@ -343,9 +286,9 @@ def render_station_detail(station: dict) -> None:
                   <table class="anom-table">
                     <thead>
                       <tr>
-                        <th style="width:28%;">Alert ID</th>
-                        <th style="width:28%;">Severity & Type</th>
-                        <th style="width:44%;">SHAP Root Cause & Action</th>
+                        <th style="width:25%;">Alert ID</th>
+                        <th style="width:25%;">Severity / Type</th>
+                        <th style="width:50%;">SHAP Root Cause & Action</th>
                       </tr>
                     </thead>
                     <tbody>{''.join(rows)}</tbody>
@@ -385,7 +328,11 @@ def render_station_detail(station: dict) -> None:
                   <table class="raw-table">
                     <thead>
                       <tr>
-                        <th>#</th><th>Timestamp</th><th>Temp (°C)</th><th>Pressure (hPa)</th><th>Rel. Hum (%)</th>
+                        <th style="width:10%;">#</th>
+                        <th style="width:36%;">Timestamp</th>
+                        <th style="width:18%;">Temp (°C)</th>
+                        <th style="width:18%;">Pressure (hPa)</th>
+                        <th style="width:18%;">Rel. Hum (%)</th>
                       </tr>
                     </thead>
                     <tbody>{rows}</tbody>
