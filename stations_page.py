@@ -56,6 +56,27 @@ def render_stations_page(stations: list[dict] | None = None) -> str:
     else:
         cards_html = "".join(station_card(station) for station in stations)
 
+    avg_t = sum(s["temperature"] for s in stations) / max(1, len(stations))
+    avg_p = sum(s["pressure"] for s in stations) / max(1, len(stations))
+    avg_h = sum(s["humidity"] for s in stations) / max(1, len(stations))
+    alerts_count = sum(1 for s in stations if s.get("anomalyStatus") != "Normal")
+
+    fleet_bar = f"""
+    <div class="panel" style="margin: 12px 0 16px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-radius: 18px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="dot"></span>
+        <span style="font-size:13px; font-weight:700; color:#1e293b;">Network Health:</span>
+        <span class="badge ok">{len(stations)} Stations Operational</span>
+        <span class="badge {'bad' if alerts_count > 0 else 'ok'}">{alerts_count} Flagged Anomalies</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:18px; font-size:12px; color:#64748b;">
+        <span>🌡 Mean Temp: <b style="color:#1e293b;">{avg_t:.1f} °C</b></span>
+        <span>◎ Mean Pressure: <b style="color:#1e293b;">{avg_p:.1f} hPa</b></span>
+        <span>💧 Mean Humidity: <b style="color:#1e293b;">{avg_h:.1f} %</b></span>
+      </div>
+    </div>
+    """
+
     return "\n".join(line.lstrip() for line in f"""
     <section class="hero">
       <div>
@@ -78,6 +99,7 @@ def render_stations_page(stations: list[dict] | None = None) -> str:
         </ul>
       </div>
     </section>
+    {fleet_bar}
     <section class="section-head">
       <div>📍</div>
       <div>
