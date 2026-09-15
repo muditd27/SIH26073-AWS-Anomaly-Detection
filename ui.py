@@ -20,7 +20,7 @@ html, body, [data-testid="stAppViewContainer"], .stApp {
 }
 
 [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-#MainMenu, footer, header, .stDeployButton,
+#MainMenu, footer, header[data-testid="stHeader"], .stDeployButton,
 section[data-testid="stSidebar"], [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapsedControl"] { display: none !important; }
 
@@ -266,6 +266,13 @@ div[data-testid="stPlotlyChart"] {
 }
 </style>
 """
+
+
+def render_html(html_str: str) -> None:
+    """Renders HTML safely without leading indentation, eliminating markdown code block bugs."""
+    import streamlit as st
+    clean = "\n".join(line.strip() for line in html_str.strip().splitlines() if line.strip())
+    st.markdown(clean, unsafe_allow_html=True)
 
 
 def health_ring(value: int, tone: str, size: int = 50) -> str:
